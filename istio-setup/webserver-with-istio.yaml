@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  labels: 
+    app: webserver
+    version: v1
+  name: webserver-v1
+spec: 
+  replicas: 1
+  selector: 
+    matchLabels: 
+      app: webserver
+      version: v1
+  template: 
+    metadata: 
+      labels: 
+        app: webserver
+        version: v1
+    spec: 
+      containers: 
+        - name: webserver
+          image: mohanram125/istioaks:webserver-v1
+          imagePullPolicy: Always
+          ports: 
+          - containerPort: 80
+          
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  labels: 
+    app: webserver
+    version: v1
+  name: webserver-v2
+spec: 
+  replicas: 1
+  selector: 
+    matchLabels: 
+      app: webserver
+      version: v1
+  template: 
+    metadata: 
+      labels: 
+        app: webserver
+        version: v1
+    spec: 
+      containers: 
+        - name: webserver
+          image: mohanram125/istioaks:webserver-v2
+          imagePullPolicy: Always
+          ports: 
+          - containerPort: 80
+          
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  labels: 
+    app: webserver
+    version: v1
+  name: webserver-v3
+spec: 
+  replicas: 1
+  selector: 
+    matchLabels: 
+      app: webserver
+      version: v1
+  template: 
+    metadata: 
+      labels: 
+        app: webserver
+        version: v1
+    spec: 
+      containers: 
+        - name: webserver
+          image: mohanram125/istioaks:webserver-v3
+          imagePullPolicy: Always
+          ports: 
+          - containerPort: 80
+          
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webserver-service
+  labels:
+    app: webserver
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: webserver
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: webserver-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/cors-allow-headers: DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,continuationtoken
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-istioaks
+    
+spec:
+  ingressClassName: nginx 
+  tls:
+    - hosts:
+      - istioaks.centralindia.cloudapp.azure.com
+      secretName: tls-secret
+  rules:
+        
+  - host: "istioaks.centralindia.cloudapp.azure.com"
+    http:
+      paths:
+      - pathType: Prefix
+        path: /webserver/(.*)
+        backend:
+          service:
+            name: webserver-service
+            port:
+              number: 8080
